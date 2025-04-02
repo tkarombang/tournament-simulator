@@ -8,26 +8,78 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+body {
+  color: rgb(var(--foreground-rgb)) !important;
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb)) !important;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
+/* body.dark {
+  color: #fff;
+  background: #1a2526;
+} */
+
+/* Debug: Harusnya jadi merah pas dark mode */
+/* .dark header {
+  background: #ff0000 !important; 
+} */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+.scrollbar-custom {
+  scrollbar-color: #f0f8ff #f0f8ff;
+  scrollbar-width: thin;
+  transition: 0.5s;
+  scroll-behavior: smooth !important;
+}
+.dark .scrollbar-custom {
+  scrollbar-color: #1a2526 #1a2526;
+  scrollbar-width: thin;
+  transition: 0.5s;
+}
+
+.dark .scrollbar-custom:active {
+  scrollbar-color: #1a2526 #1a2526;
+}
+.scrollbar-custom:active {
+  scrollbar-color: #1a2526 #f0f8ff;
+}
+
+/* .snap-start {
+  scroll-snap-align: start !important;
+} */
+
+/* border-right: 1px solid rgba(0, 0, 0, 0.2) !important; */
+/* .with-separator {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  transform: translateZ(0);
+}
+
+.dark .with-separator {
+  box-shadow: 2px 0 4px rgba(255, 255, 255, 0.1);
+} */
+
+/* .with-separator {
+  z-index: 20;
+  will-change: transform;
+  transform: translateZ(0);
+} */
+
+.with-separator::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+  transform: translateZ(0);
+}
+
+.dark .with-separator::after {
+  box-shadow: 1px 0 2px rgba(6, 7, 8, 1);
 }
