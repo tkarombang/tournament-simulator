@@ -9,6 +9,7 @@ export interface Team {
   GD: number;
   PTS: number;
   last5: string[]; // "W", "D", "L"
+  flag: string;
 }
 
 export interface Tournament {
@@ -20,52 +21,52 @@ const initialData: Tournament = {
   tournament: "Piala Dunia 2022",
   groups: {
     A: [
-      { team: "Qatar", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Ecuador", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Senegal", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Netherlands", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Qatar", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-qa" },
+      { team: "Ecuador", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ec" },
+      { team: "Senegal", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-sn" },
+      { team: "Netherlands", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-nl" },
     ],
     B: [
-      { team: "England", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Iran", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "USA", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Wales", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "England", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-gb-eng" },
+      { team: "Iran", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ir" },
+      { team: "USA", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-us" },
+      { team: "Wales", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-gb-wls" },
     ],
     C: [
-      { team: "Argentina", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Poland", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Mexico", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Saudi Arabia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Argentina", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ar" },
+      { team: "Poland", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-pl" },
+      { team: "Mexico", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-mx" },
+      { team: "Saudi Arabia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-sa" },
     ],
     D: [
-      { team: "France", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Australia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Tunisia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Denmark", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "France", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-fr" },
+      { team: "Australia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-au" },
+      { team: "Tunisia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-tn" },
+      { team: "Denmark", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-dk" },
     ],
     E: [
-      { team: "Japan", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Spain", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "German", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Costa Rica", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Japan", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-jp" },
+      { team: "Spain", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-es" },
+      { team: "German", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-de" },
+      { team: "Costa Rica", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-cr" },
     ],
     F: [
-      { team: "Maroco", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Croatia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Belgium", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Canada", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Maroco", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ma" },
+      { team: "Croatia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-hr" },
+      { team: "Belgium", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-be" },
+      { team: "Canada", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ca" },
     ],
     G: [
-      { team: "Brazil", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Switzerland", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Cameroon", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Serbia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Brazil", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-br" },
+      { team: "Switzerland", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-ch" },
+      { team: "Cameroon", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-cm" },
+      { team: "Serbia", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-rs" },
     ],
     H: [
-      { team: "Portugal", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "South Korea", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Uruguay", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
-      { team: "Ghana", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [] },
+      { team: "Portugal", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-pt" },
+      { team: "South Korea", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-kr" },
+      { team: "Uruguay", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-uy" },
+      { team: "Ghana", MP: 0, W: 0, D: 0, L: 0, GF: 0, GA: 0, GD: 0, PTS: 0, last5: [], flag: "fi fi-gh" },
     ],
   },
 };

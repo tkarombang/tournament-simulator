@@ -1,6 +1,6 @@
 import GroupTabs from "@/components/GroupTabs";
 import ThemeToggle from "@/components/ThemeToggle";
-import initialData, { Tournament } from "@/data";
+import initialData, { Team, Tournament } from "@/data";
 import { useState } from "react";
 
 interface HomeProps {
@@ -21,7 +21,8 @@ export default function Home({ darkMode, setDarkMode }: HomeProps) {
       </header>
 
       <main className="container mx-auto m-5 max-w-screen-xl">
-        <GroupTabs tournament={tournament} setTournament={setTournament} />
+        {/* <GroupTabs tournament={tournament} setTournament={setTournament} /> */}
+        <GroupTabs />
       </main>
     </div>
   );
