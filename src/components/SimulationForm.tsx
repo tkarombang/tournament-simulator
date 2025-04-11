@@ -1,5 +1,5 @@
 import { Team } from "@/data";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface SimulationFormProps {
@@ -24,16 +24,27 @@ interface MatchScore {
 }
 
 export default function SimulationForm({ teams, activeGroup, simulatedMatches, setSimulatedMatches, onSimulateStage }: SimulationFormProps) {
-  const matches = [
-    { stage: 1, team1: teams[0], team2: teams[1], matchId: `${activeGroup}-1-0-1` },
-    { stage: 1, team1: teams[2], team2: teams[3], matchId: `${activeGroup}-1-2-3` },
+  function generateMatches(teams: Team[], group: string) {
+    if (teams.length < 4) return [];
+    return [
+      { stage: 1, team1: teams[0], team2: teams[1], matchId: `${group}-1-0-1` },
+      { stage: 1, team1: teams[2], team2: teams[3], matchId: `${group}-1-2-3` },
+      { stage: 2, team1: teams[3], team2: teams[0], matchId: `${group}-2-3-0` },
+      { stage: 2, team1: teams[2], team2: teams[1], matchId: `${group}-2-2-1` },
+      { stage: 3, team1: teams[2], team2: teams[0], matchId: `${group}-3-2-0` },
+      { stage: 3, team1: teams[3], team2: teams[1], matchId: `${group}-3-3-1` },
+    ];
+  }
 
-    { stage: 2, team1: teams[3], team2: teams[0], matchId: `${activeGroup}-2-3-0` },
-    { stage: 2, team1: teams[2], team2: teams[1], matchId: `${activeGroup}-2-2-1` },
+  const matches = useMemo(() => generateMatches(teams, activeGroup), [teams, activeGroup]);
 
-    { stage: 3, team1: teams[2], team2: teams[0], matchId: `${activeGroup}-3-2-0` },
-    { stage: 3, team1: teams[3], team2: teams[1], matchId: `${activeGroup}-3-3-1` },
-  ];
+  const stages = useMemo(() => {
+    return matches.reduce((acc, match) => {
+      if (!acc[match.stage]) acc[match.stage] = [];
+      acc[match.stage].push(match);
+      return acc;
+    }, {} as { [stage: number]: typeof matches });
+  }, [matches]);
 
   const [scores, setScores] = useState<{ [matchId: string]: MatchScore }>(() => {
     return matches.reduce((acc, match) => {
@@ -41,35 +52,92 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
       return acc;
     }, {} as { [matchId: string]: MatchScore });
   });
-  // STATE UNTUK LACAK STAGE MANA SAJA YANG VISIBLE
-  const [visibleStages, setVisibleStages] = useState<number[]>([1]);
 
-  // RESET SCORES PAS GANTI GROUP
+  const [visibleStages, setVisibleStages] = useState<{ [group: string]: number[] }>({});
+
   useEffect(() => {
-    // setScores({});
-    const newScores = matches.reduce((acc, match) => {
-      acc[match.matchId] = { score1: 0, score2: 0 };
-      return acc;
-    }, {} as { [matchId: string]: MatchScore });
+    console.log("Reset scores and stages for group:", activeGroup);
 
-    setScores(newScores);
-    setVisibleStages([1]);
-  }, [activeGroup]);
+    // Kalau belum ada entry untuk grup ini, set default stage 1.
+    setVisibleStages((prev) => ({
+      ...prev,
+      [activeGroup]: prev[activeGroup] ?? [1],
+    }));
+  }, [activeGroup, matches]);
 
-  // UPDATE SKOR DAN PANGGIL onSimulate PAS INPUT BERUBAH
+  const handleSimulateStage = (stage: number) => {
+    console.log("Simulating stage", stage);
+    const stageMatches = stages[stage];
+    if (!stageMatches) return;
+
+    const updatedMatches = stageMatches.map((match) => ({
+      ...match,
+      score1: scores[match.matchId]?.score1 ?? 0,
+      score2: scores[match.matchId]?.score2 ?? 0,
+    }));
+
+    // Update scores state
+    setScores((prev) => {
+      const newScores = { ...prev };
+      updatedMatches.forEach((match) => {
+        newScores[match.matchId] = {
+          score1: match.score1,
+          score2: match.score2,
+        };
+      });
+      return newScores;
+    });
+
+    // Kirim hasil ke parent
+    const stageScores = updatedMatches.map((match) => ({
+      matchId: match.matchId,
+      team1: match.team1.team,
+      score1: match.score1,
+      team2: match.team2.team,
+      score2: match.score2,
+    }));
+
+    onSimulateStage(stageScores);
+
+    setSimulatedMatches((prev) => {
+      const newSet = new Set(prev);
+      updatedMatches.forEach((match) => newSet.add(match.matchId));
+      return newSet;
+    });
+
+    // Tampilkan stage berikutnya
+    if (stage === 1) {
+      setVisibleStages((prev) => {
+        const current = prev[activeGroup] ?? [];
+        const newStages = current.includes(2) ? current : [...current, 2];
+        return { ...prev, [activeGroup]: newStages };
+      });
+    }
+
+    if (stage === 2) {
+      setVisibleStages((prev) => {
+        const current = prev[activeGroup] ?? [];
+        const newStages = current.includes(3) ? current : [...current, 3];
+        return { ...prev, [activeGroup]: newStages };
+      });
+    }
+
+    // Debug log
+    console.log("Simulated Matches:", simulatedMatches);
+    console.log("Visible Stages:", visibleStages);
+  };
+
   const handleIncrement = (matchId: string, isScore1: boolean) => {
     setScores((prev) => {
-      // KONVERSI KE NUMBER, DEFAULT 0 KALAU KOSONG
       const score = prev[matchId] || { score1: 0, score2: 0 };
       const newScore1 = isScore1 ? score.score1 + 1 : score.score1;
       const newScore2 = !isScore1 ? score.score2 + 1 : score.score2;
       return { ...prev, [matchId]: { score1: newScore1, score2: newScore2 } };
     });
   };
-  // UPDATE SKOR DAN PANGGIL onSimulate PAS INPUT BERUBAH
+
   const handleDecrement = (matchId: string, isScore1: boolean) => {
     setScores((prev) => {
-      // KONVERSI KE NUMBER, DEFAULT 0 KALAU KOSONG
       const score = prev[matchId] || { score1: 0, score2: 0 };
       const newScore1 = isScore1 ? Math.max(0, score.score1 - 1) : score.score1;
       const newScore2 = !isScore1 ? Math.max(0, score.score2 - 1) : score.score2;
@@ -77,48 +145,13 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
     });
   };
 
-  const handleSimulateStage = (stage: number) => {
-    const stageMatches = matches.filter((match) => match.stage === stage);
-    const stageScores = stageMatches.map((match) => {
-      const score = scores[match.matchId] || { score1: 0, score2: 0 };
-      return {
-        matchId: match.matchId,
-        team1: match.team1.team,
-        score1: score.score1,
-        team2: match.team2.team,
-        score2: score.score2,
-      };
-    });
-
-    onSimulateStage(stageScores);
-
-    setSimulatedMatches((prev) => {
-      const newSet = new Set(prev);
-      stageMatches.forEach((match) => newSet.add(match.matchId));
-      return newSet;
-    });
-    // TAMBAH STAGE BERIKUTNYA KE visibleStage
-    if (stage === 1) {
-      setVisibleStages((prev) => [...prev, 2]);
-    } else if (stage === 2) {
-      setVisibleStages((prev) => [...prev, 3]);
-    }
-  };
-
-  // KELOMPOKKAN PERTANDINGAN BERDASARKAN STAGE
-  const stages = matches.reduce((acc, match) => {
-    if (!acc[match.stage]) acc[match.stage] = [];
-    acc[match.stage].push(match);
-    return acc;
-  }, {} as { [stage: number]: typeof matches });
-
   return (
     <motion.div className="mt-8">
       {Object.keys(stages).map((stage) => {
         const stageNumber = Number(stage);
         const stageMatches = stages[stageNumber];
         const isStageSimulated = stageMatches.every((match) => simulatedMatches.has(match.matchId));
-        const isStageVisible = visibleStages.includes(stageNumber);
+        const isStageVisible = (visibleStages[activeGroup] ?? []).includes(stageNumber);
 
         if (!isStageVisible) {
           return (
@@ -138,11 +171,9 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
         return (
           <AnimatePresence key={stage}>
             {isStageVisible && (
-              // <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.5 }} key={stage} className="mb-6">
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.5 }} className="mb-6">
                 <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-gray-200 mb-2 border-y-2 border-sky-500 dark:border-teal-dark pb-1 uppercase">Stage {stage}</h3>
                 <div className="space-y-4">
-                  {/* {stages[Number(stage)].map((match) => { */}
                   {stageMatches.map((match) => {
                     const matchId = match.matchId;
                     const score = scores[matchId] || { score1: 0, score2: 0 };
@@ -150,77 +181,56 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
 
                     return (
                       <div key={matchId} className="flex items-center justify-center gap-4 text-gray-800 dark:text-gray-200 mt-7">
-                        {/* TIM 1 */}
+                        {/* Tim 1 */}
                         <div className="flex flex-col items-center gap-1 w-32">
                           <div className="flex items-center gap-2 w-32 justify-start border-b-2 border-stone-300 dark:border-gray-700">
                             <span className={`w-5 h-5 ${match.team1.flag}`}></span>
                             <span className="text-sm sm:text-base">{match.team1.team}</span>
                           </div>
-                          {/* Counter Tim 1 */}
                           <div className="flex items-center gap-1 mt-1">
                             <button
                               type="button"
                               onClick={() => handleDecrement(matchId, true)}
                               disabled={isSimulated}
-                              className={`bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none ${
-                                isSimulated ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
+                              className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               -
                             </button>
-                            <input
-                              type="text"
-                              value={score.score1}
-                              readOnly
-                              className="bg-gray-50 border-x-0 border-gray-300 text-center text-gray-900 text-sm focus:ring-blue-300 focus:border-blue-300 block w-10 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-300 dark:focus:border-blue-300"
-                            />
+                            <input type="text" value={score.score1} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
                               type="button"
                               onClick={() => handleIncrement(matchId, true)}
                               disabled={isSimulated}
-                              className={`bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none ${
-                                isSimulated ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
+                              className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               +
                             </button>
                           </div>
                         </div>
 
-                        <span className="text-gray-500 dark:text-gray-400 text-xs p-5 ">v</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs p-5">v</span>
 
+                        {/* Tim 2 */}
                         <div className="flex flex-col items-center gap-1 w-32">
-                          {/* COUNTER SCORE */}
-                          {/* TIM 2 */}
                           <div className="flex items-center gap-2 w-32 justify-end border-b-2 border-stone-300 dark:border-gray-700">
                             <span className="text-sm sm:text-base">{match.team2.team}</span>
                             <span className={`w-5 h-5 ${match.team2.flag}`}></span>
                           </div>
-                          {/* Counter Tim 2 */}
                           <div className="flex items-center gap-1 mt-1">
                             <button
                               type="button"
                               onClick={() => handleIncrement(matchId, false)}
                               disabled={isSimulated}
-                              className={`bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none ${
-                                isSimulated ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
+                              className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               +
                             </button>
-                            <input
-                              type="text"
-                              value={score.score2}
-                              readOnly
-                              className="bg-gray-50 border-x-0 border-gray-300 text-center text-gray-900 text-sm focus:ring-blue-300 focus:border-blue-300 block w-10 py-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-300 dark:focus:border-blue-300"
-                            />
+                            <input type="text" value={score.score2} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
                               type="button"
                               onClick={() => handleDecrement(matchId, false)}
                               disabled={isSimulated}
-                              className={`bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none ${
-                                isSimulated ? "opacity-50 cursor-not-allowed" : ""
-                              }`}
+                              className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               -
                             </button>
@@ -229,10 +239,10 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                       </div>
                     );
                   })}
-                  {/* TONBOL SIMULATE STAGE */}
+
                   <div className="flex justify-center mt-4">
                     <button
-                      onClick={() => handleSimulateStage(stageNumber)}
+                      onClick={() => handleSimulateStage(Number(stage))}
                       disabled={isStageSimulated}
                       className={`px-4 py-2 rounded text-white ${isStageSimulated ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"} transition-colors`}
                     >
