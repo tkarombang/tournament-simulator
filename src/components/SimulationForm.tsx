@@ -1,12 +1,14 @@
 import { Team } from "@/data";
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSitemap } from "@fortawesome/free-solid-svg-icons";
 
 interface SimulationFormProps {
   teams: Team[];
   activeGroup: string;
-  simulatedMatches: Set<string>;
-  setSimulatedMatches: React.Dispatch<React.SetStateAction<Set<string>>>;
+  simulatedMatches: { [group: string]: Set<string> };
+  setSimulatedMatches: React.Dispatch<React.SetStateAction<{ [group: string]: Set<string> }>>;
   onSimulateStage: (
     stageMatches: Array<{
       matchId: string;
@@ -56,17 +58,27 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
   const [visibleStages, setVisibleStages] = useState<{ [group: string]: number[] }>({});
 
   useEffect(() => {
-    console.log("Reset scores and stages for group:", activeGroup);
+    // INI YANG MEMBUAT SCORE GF GA GD tetap 0 (HAPUS NANTI)
+    // setSimulatedMatches((prev) => {
+    //   if (!prev[activeGroup]) {
+    //     return { ...prev, [activeGroup]: new Set<string>() };
+    //   }
+    //   return prev;
+    // });
+    // INI YANG MEMBUAT SKOR AKAN DI RESET KE 0 (HAPUS NANTI)
+    // const newScores = matches.reduce((acc, match) => {
+    //   acc[match.matchId] = { score1: 0, score2: 0 };
+    //   return acc;
+    // }, {} as { [matchId: string]: MatchScore });
+    // setScores(newScores);
 
-    // Kalau belum ada entry untuk grup ini, set default stage 1.
     setVisibleStages((prev) => ({
       ...prev,
       [activeGroup]: prev[activeGroup] ?? [1],
     }));
-  }, [activeGroup, matches]);
+  }, [activeGroup, matches, setSimulatedMatches]);
 
   const handleSimulateStage = (stage: number) => {
-    console.log("Simulating stage", stage);
     const stageMatches = stages[stage];
     if (!stageMatches) return;
 
@@ -88,6 +100,12 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
       return newScores;
     });
 
+    setSimulatedMatches((prev) => {
+      const currentGroupMatches = prev[activeGroup] ?? new Set<string>();
+      updatedMatches.forEach((match) => currentGroupMatches.add(match.matchId));
+      return { ...prev, [activeGroup]: currentGroupMatches };
+    });
+
     // Kirim hasil ke parent
     const stageScores = updatedMatches.map((match) => ({
       matchId: match.matchId,
@@ -98,12 +116,6 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
     }));
 
     onSimulateStage(stageScores);
-
-    setSimulatedMatches((prev) => {
-      const newSet = new Set(prev);
-      updatedMatches.forEach((match) => newSet.add(match.matchId));
-      return newSet;
-    });
 
     // Tampilkan stage berikutnya
     if (stage === 1) {
@@ -121,10 +133,6 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
         return { ...prev, [activeGroup]: newStages };
       });
     }
-
-    // Debug log
-    console.log("Simulated Matches:", simulatedMatches);
-    console.log("Visible Stages:", visibleStages);
   };
 
   const handleIncrement = (matchId: string, isScore1: boolean) => {
@@ -150,8 +158,10 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
       {Object.keys(stages).map((stage) => {
         const stageNumber = Number(stage);
         const stageMatches = stages[stageNumber];
-        const isStageSimulated = stageMatches.every((match) => simulatedMatches.has(match.matchId));
         const isStageVisible = (visibleStages[activeGroup] ?? []).includes(stageNumber);
+        const isStageSimulated = stageMatches.every((match) => simulatedMatches[activeGroup]?.has(match.matchId) ?? false);
+
+        const isButtonDisabled = isStageSimulated;
 
         if (!isStageVisible) {
           return (
@@ -177,7 +187,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                   {stageMatches.map((match) => {
                     const matchId = match.matchId;
                     const score = scores[matchId] || { score1: 0, score2: 0 };
-                    const isSimulated = simulatedMatches.has(matchId);
+                    const isSimulated = isStageSimulated;
 
                     return (
                       <div key={matchId} className="flex items-center justify-center gap-4 text-gray-800 dark:text-gray-200 mt-7">
@@ -196,7 +206,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                             >
                               -
                             </button>
-                            <input type="text" value={score.score1} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
+                            <input type="text" value={score.score1} disabled={isSimulated} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
                               type="button"
                               onClick={() => handleIncrement(matchId, true)}
@@ -225,7 +235,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                             >
                               +
                             </button>
-                            <input type="text" value={score.score2} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
+                            <input type="text" value={score.score2} disabled={isSimulated} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
                               type="button"
                               onClick={() => handleDecrement(matchId, false)}
@@ -243,10 +253,12 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                   <div className="flex justify-center mt-4">
                     <button
                       onClick={() => handleSimulateStage(Number(stage))}
-                      disabled={isStageSimulated}
-                      className={`px-4 py-2 rounded text-white ${isStageSimulated ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"} transition-colors`}
+                      disabled={isButtonDisabled}
+                      className={`px-4 py-2 rounded text-white uppercase font-bold ${
+                        isButtonDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
+                      } transition-colors`}
                     >
-                      Simulate Stage {stage}
+                      laga <FontAwesomeIcon icon={faSitemap} className="ml-2" />
                     </button>
                   </div>
                 </div>

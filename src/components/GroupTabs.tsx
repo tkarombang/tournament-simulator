@@ -2,17 +2,18 @@ import initialData, { Tournament } from "@/data";
 import StandingsTable from "./StandingTable";
 import { useEffect, useState } from "react";
 import SimulationForm from "./SimulationForm";
+import { motion } from "framer-motion";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRotate } from "@fortawesome/free-solid-svg-icons";
 
 export default function GroupTabs() {
   const [activeGroup, setActiveGroup] = useState<string>("A");
   const [groupTeams, setGroupTeams] = useState<Tournament["groups"]>(initialData.groups);
-  const [simulatedMatches, setSimulatedMatches] = useState<Set<string>>(new Set());
+  const [simulatedMatches, setSimulatedMatches] = useState<{ [group: string]: Set<string> }>({});
   const [resetKey, setResetKey] = useState<number>(0);
 
   //  RESET SCORES PAS GANTI GROUP
   useEffect(() => {
-    // setScores({});
-    setSimulatedMatches(new Set());
     // BERSIHKAN localStorage UNTUK GROUP INI
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith(`match-${activeGroup}`)) {
@@ -27,7 +28,7 @@ export default function GroupTabs() {
       const currentGroupTeams = [...newTeams[activeGroup]];
 
       stageMatches.forEach(({ matchId, team1, score1, team2, score2 }) => {
-        const isAlreadySimulated = simulatedMatches.has(matchId);
+        const isAlreadySimulated = simulatedMatches[activeGroup]?.has(matchId) ?? false;
         const team1Index = currentGroupTeams.findIndex((team) => team.team === team1);
         const team2Index = currentGroupTeams.findIndex((team) => team.team === team2);
 
@@ -130,7 +131,10 @@ export default function GroupTabs() {
 
   const handleReset = () => {
     setGroupTeams(initialData.groups);
-    setSimulatedMatches(new Set());
+    setSimulatedMatches((prev) => ({
+      ...prev,
+      [activeGroup]: new Set<string>(),
+    }));
     // Force remount SimulationForm to reset internal state
     setResetKey((prev) => prev + 1);
     // BERSIHKAN LOCAL STORAGE
@@ -159,9 +163,9 @@ export default function GroupTabs() {
       <div>
         <StandingsTable teams={groupTeams[activeGroup]} />
         <div className="mt-7 flex justify-center">
-          <button onClick={handleReset} className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800 transition-colors">
-            Reset Match
-          </button>
+          <motion.button onClick={handleReset} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="w-12 h-12 bg-red-500 text-2xl text-white rounded-full hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800 transition-colors">
+            <FontAwesomeIcon icon={faRotate} />
+          </motion.button>
         </div>
         <SimulationForm key={resetKey} teams={groupTeams[activeGroup]} activeGroup={activeGroup} simulatedMatches={simulatedMatches} setSimulatedMatches={setSimulatedMatches} onSimulateStage={handleSimulate} />
       </div>
