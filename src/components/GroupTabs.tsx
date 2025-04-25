@@ -144,6 +144,8 @@ export default function GroupTabs() {
       }
     });
   };
+
+  const isResetDisabled = !simulatedMatches[activeGroup] || simulatedMatches[activeGroup].size == 0;
   return (
     <div className="p-4">
       <ul className="flex flex-wrap justify-center text-sm font-medium text-center text-slate-600 border-b border-sky-500 dark:border-teal-dark dark:text-slate-500 mb-3">
@@ -163,7 +165,15 @@ export default function GroupTabs() {
       <div>
         <StandingsTable teams={groupTeams[activeGroup]} />
         <div className="mt-7 flex justify-center">
-          <motion.button onClick={handleReset} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="w-12 h-12 bg-red-500 text-2xl text-white rounded-full hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800 transition-colors">
+          <motion.button
+            layout
+            disabled={isResetDisabled}
+            onClick={handleReset}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className={`fixed bottom-10 z-50 right-10 w-12 h-12 text-2xl text-white rounded-full
+           ${isResetDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "transition-colors bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"} `}
+          >
             <FontAwesomeIcon icon={faRotate} />
           </motion.button>
         </div>

@@ -38,7 +38,16 @@ export default function StandingsTable({ teams }: StandingsTableProps) {
 
   return (
     <div className="overflow-x-auto snap-x snap-mandatory scroll-pl-1 scrollbar-custom min-w-full shadow-md rounded-lg" ref={tableRef}>
-      <motion.table className="w-full text-left border-collapse min-w-[600px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      <motion.table
+        className="w-full text-left border-collapse min-w-[600px]"
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          duration: 0.8,
+          delay: 0.5,
+          ease: [0, 0.71, 0.2, 1.01],
+        }}
+      >
         <thead>
           <tr className="dark:bg-dark-bg text-sky-300 dark:text-cyan-200 border-b-2 border-sky-300 dark:border-cyan-200">
             <th className={`p-2 whitespace-nowrap text-xs sm:text-base sticky left-0 z-10 bg-light-bg dark:bg-dark-bg ${isScrolled ? "with-separator" : ""}`}>Team</th>

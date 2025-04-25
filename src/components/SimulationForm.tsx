@@ -75,6 +75,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
     setVisibleStages((prev) => ({
       ...prev,
       [activeGroup]: prev[activeGroup] ?? [1],
+      // [activeGroup]: [1],
     }));
   }, [activeGroup, matches, setSimulatedMatches]);
 
@@ -100,12 +101,6 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
       return newScores;
     });
 
-    setSimulatedMatches((prev) => {
-      const currentGroupMatches = prev[activeGroup] ?? new Set<string>();
-      updatedMatches.forEach((match) => currentGroupMatches.add(match.matchId));
-      return { ...prev, [activeGroup]: currentGroupMatches };
-    });
-
     // Kirim hasil ke parent
     const stageScores = updatedMatches.map((match) => ({
       matchId: match.matchId,
@@ -116,6 +111,12 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
     }));
 
     onSimulateStage(stageScores);
+
+    setSimulatedMatches((prev) => {
+      const currentGroupMatches = prev[activeGroup] ?? new Set<string>();
+      updatedMatches.forEach((match) => currentGroupMatches.add(match.matchId));
+      return { ...prev, [activeGroup]: currentGroupMatches };
+    });
 
     // Tampilkan stage berikutnya
     if (stage === 1) {
@@ -154,7 +155,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
   };
 
   return (
-    <motion.div className="mt-8">
+    <motion.div className="mt-8 min-h-[20rem]">
       {Object.keys(stages).map((stage) => {
         const stageNumber = Number(stage);
         const stageMatches = stages[stageNumber];
@@ -173,7 +174,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
               key={stage}
               className="text-center text-gray-500 dark:text-gray-400 mb-6"
             >
-              Stage {stage} Akan Tersedia Setelah Stage {stageNumber - 1}.
+              Loading... {stage}
             </motion.div>
           );
         }
@@ -181,7 +182,17 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
         return (
           <AnimatePresence key={stage}>
             {isStageVisible && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.5 }} className="mb-6">
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, scale: 1, height: "auto" }}
+                transition={{
+                  duration: 0.5,
+                  delay: 0.2,
+                  ease: [0, 0.71, 0.2, 1.01],
+                }}
+                className="mb-6"
+              >
                 <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-gray-200 mb-2 border-y-2 border-sky-500 dark:border-teal-dark pb-1 uppercase">Stage {stage}</h3>
                 <div className="space-y-4">
                   {stageMatches.map((match) => {
