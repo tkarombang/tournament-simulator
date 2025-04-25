@@ -72,10 +72,7 @@ export default function StandingsTable({ teams }: StandingsTableProps) {
                   <span>{team.team}</span>
                 </div>
               </td>
-              <td className="p-2 snap-start scroll-ml-3 sm:scroll-ml-6 whitespace-nowrap text-xs sm:text-base text-center w-12">
-                {}
-                {team.MP}
-              </td>
+              <td className="p-2 snap-start scroll-ml-3 sm:scroll-ml-6 whitespace-nowrap text-xs sm:text-base text-center w-12">{team.MP}</td>
               <td className="p-2 snap-start scroll-ml-3 sm:scroll-ml-6 whitespace-nowrap text-xs sm:text-base text-center w-12">{team.W}</td>
               <td className="p-2 snap-start scroll-ml-3 sm:scroll-ml-6 whitespace-nowrap text-xs sm:text-base text-center w-12">{team.D}</td>
               <td className="p-2 snap-start scroll-ml-3 sm:scroll-ml-6 whitespace-nowrap text-xs sm:text-base text-center w-12">{team.L}</td>

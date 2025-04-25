@@ -2,7 +2,7 @@ import { Team } from "@/data";
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSitemap } from "@fortawesome/free-solid-svg-icons";
+import { faMinus, faPlus, faSitemap } from "@fortawesome/free-solid-svg-icons";
 
 interface SimulationFormProps {
   teams: Team[];
@@ -155,7 +155,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
   };
 
   return (
-    <motion.div className="mt-8 min-h-[20rem]">
+    <motion.div className="mt-8 min-h-[25rem]">
       {Object.keys(stages).map((stage) => {
         const stageNumber = Number(stage);
         const stageMatches = stages[stageNumber];
@@ -215,7 +215,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                               disabled={isSimulated}
                               className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                              -
+                              <FontAwesomeIcon icon={faMinus} />
                             </button>
                             <input type="text" value={score.score1} disabled={isSimulated} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
@@ -224,7 +224,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                               disabled={isSimulated}
                               className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                              +
+                              <FontAwesomeIcon icon={faPlus} />
                             </button>
                           </div>
                         </div>
@@ -244,7 +244,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                               disabled={isSimulated}
                               className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-s-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                              +
+                              <FontAwesomeIcon icon={faPlus} />
                             </button>
                             <input type="text" value={score.score2} disabled={isSimulated} readOnly className="bg-gray-50 border-x-0 border-gray-300 text-center w-10 py-2 dark:bg-gray-700 dark:border-gray-600 text-sm" />
                             <button
@@ -253,7 +253,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                               disabled={isSimulated}
                               className={`bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 border border-gray-300 rounded-e-sm flex items-center p-1 h-5 ${isSimulated ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
-                              -
+                              <FontAwesomeIcon icon={faMinus} />
                             </button>
                           </div>
                         </div>
@@ -266,7 +266,7 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
                       onClick={() => handleSimulateStage(Number(stage))}
                       disabled={isButtonDisabled}
                       className={`px-4 py-2 rounded text-white uppercase font-bold ${
-                        isButtonDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
+                        isButtonDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600 dark:bg-teal-dark dark:hover:bg-teal-700"
                       } transition-colors`}
                     >
                       laga <FontAwesomeIcon icon={faSitemap} className="ml-2" />

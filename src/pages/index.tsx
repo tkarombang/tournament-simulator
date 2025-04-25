@@ -1,5 +1,6 @@
 import GroupTabs from "@/components/GroupTabs";
 import ThemeToggle from "@/components/ThemeToggle";
+import FooterPage from "@/components/FooterPage";
 import initialData, { Team, Tournament } from "@/data";
 import { useState } from "react";
 
@@ -24,6 +25,10 @@ export default function Home({ darkMode, setDarkMode }: HomeProps) {
         {/* <GroupTabs tournament={tournament} setTournament={setTournament} /> */}
         <GroupTabs />
       </main>
+
+      <footer className="mt-8 p-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-300 dark:border-gray-700">
+        <FooterPage />
+      </footer>
     </div>
   );
 }
