@@ -150,34 +150,34 @@ export default function GroupTabs() {
     <div className="p-4">
       <ul className="flex flex-wrap justify-center text-sm font-medium text-center text-slate-600 border-b border-sky-500 dark:border-teal-dark dark:text-slate-500 mb-3">
         {Object.keys(groupTeams).map((group) => (
-          <li key={group} className="me-2">
+          <li key={group} className="me-1">
             <button
               onClick={() => setActiveGroup(group)}
-              className={`inline-block p-4 rounded-t-lg ${
+              className={`inline-block px-2 py-0.5 rounded-t-md ${
                 activeGroup === group ? "text-slate-100 bg-sky-500 dark:bg-teal-dark dark:text-slate-100" : "hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-stone-900 dark:hover:text-stone-400"
               }`}
             >
-              Group {group}
+              {group}
             </button>
           </li>
         ))}
       </ul>
       <div>
         <StandingsTable teams={groupTeams[activeGroup]} />
-        <div className="mt-7 flex justify-center">
+        <SimulationForm key={resetKey} teams={groupTeams[activeGroup]} activeGroup={activeGroup} simulatedMatches={simulatedMatches} setSimulatedMatches={setSimulatedMatches} onSimulateStage={handleSimulate} />
+        <div className="mt-7 flex justify-center relative">
           <motion.button
             layout
             disabled={isResetDisabled}
             onClick={handleReset}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className={`fixed bottom-10 z-50 right-10 w-12 h-12 text-2xl text-white rounded-full
+            className={`absolute z-50 bottom-1 right-1 w-12 h-12 text-2xl text-white rounded-full
            ${isResetDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "transition-colors bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"} `}
           >
             <FontAwesomeIcon icon={faRotate} />
           </motion.button>
         </div>
-        <SimulationForm key={resetKey} teams={groupTeams[activeGroup]} activeGroup={activeGroup} simulatedMatches={simulatedMatches} setSimulatedMatches={setSimulatedMatches} onSimulateStage={handleSimulate} />
       </div>
     </div>
   );
