@@ -11,16 +11,48 @@ export default function GroupTabs() {
   const [groupTeams, setGroupTeams] = useState<Tournament["groups"]>(initialData.groups);
   const [simulatedMatches, setSimulatedMatches] = useState<{ [group: string]: Set<string> }>({});
   const [resetKey, setResetKey] = useState<number>(0);
+  const [isLoaded, setIsLoaded] = useState(false); // tambah loading state
+
+  const isClient = typeof window !== "undefined";
+
+  // langkah-2: Ambil data dari localStorage di useEffect setelah hidrasi
+  useEffect(() => {
+    if (isClient) {
+      const saveData = localStorage.getItem("groupData");
+      console.log(saveData);
+      if (saveData) {
+        const parsingData = JSON.parse(saveData);
+        console.log(parsingData);
+        setGroupTeams(parsingData.groupTeams);
+        if (parsingData.simulatedMatches) {
+          setSimulatedMatches(Object.fromEntries(Object.entries(parsingData.simulatedMatches).map(([group, matchSet]) => [group, new Set(matchSet as string[])])));
+        }
+      }
+      setIsLoaded(true);
+    }
+  }, [isClient]);
+
+  // langkah-3 simpan data ke localStorage
+  useEffect(() => {
+    if (isClient && isLoaded) {
+      const dataToSave = {
+        groupTeams,
+        simulatedMatches: Object.fromEntries(Object.entries(simulatedMatches).map(([group, matchSet]) => [group, Array.from(matchSet)])),
+      };
+      localStorage.setItem("groupData", JSON.stringify(dataToSave));
+    }
+  });
 
   //  RESET SCORES PAS GANTI GROUP
   useEffect(() => {
-    // BERSIHKAN localStorage UNTUK GROUP INI
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith(`match-${activeGroup}`)) {
-        localStorage.removeItem(key);
-      }
-    });
-  }, [activeGroup]);
+    if (isClient && isLoaded) {
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith(`match-${activeGroup}`)) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  });
 
   const handleSimulate = (stageMatches: Array<{ team1: string; score1: number; team2: string; score2: number; matchId: string }>) => {
     setGroupTeams((prevTeams) => {
