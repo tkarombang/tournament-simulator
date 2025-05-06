@@ -11,7 +11,7 @@ export default function GroupTabs() {
   const [groupTeams, setGroupTeams] = useState<Tournament["groups"]>(initialData.groups);
   const [simulatedMatches, setSimulatedMatches] = useState<{ [group: string]: Set<string> }>({});
   const [resetKey, setResetKey] = useState<number>(0);
-  const [isLoaded, setIsLoaded] = useState(false); // tambah loading state
+  const [isLoaded, setIsLoaded] = useState(false); // tambah loading state (apakah data dari localStorage sudah dimuat)
 
   const isClient = typeof window !== "undefined";
 
