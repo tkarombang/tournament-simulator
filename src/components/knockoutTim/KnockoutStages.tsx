@@ -1,10 +1,13 @@
 import { group } from "console";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+
+type MatchScore = {
+  teamScore1: number;
+  teamScore2: number;
+};
 
 export default function KnockoutStage() {
-  type Stage = "Round Of 16" | "Quarter-finals" | "Semi-finals" | "Final-match";
   const [activeTab, setActiveTab] = useState<Stage>("Round Of 16");
-
   // langkah 1: tulis state untuk menyimpan skor (pertandingan
   const [knockoutScores, setKnockoutScores] = useState<Record<Stage, Record<string, { team1Score: number; team2Score: number }>>>({
     "Round Of 16": {},
@@ -12,6 +15,10 @@ export default function KnockoutStage() {
     "Semi-finals": {},
     "Final-match": {},
   });
+  const [resetKey, isResetKey] = useState<number>(0);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  type Stage = "Round Of 16" | "Quarter-finals" | "Semi-finals" | "Final-match";
 
   const matches: Record<Stage, { team1: string; team2: string }[]> = {
     "Round Of 16": [
@@ -40,6 +47,34 @@ export default function KnockoutStage() {
   const tabs: Stage[] = ["Round Of 16", "Quarter-finals", "Semi-finals", "Final-match"];
   const groups = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
+  // langkah-2-localStorage: Ambil data dari localStorage di useEffect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saveData = localStorage.getItem("knockoutData");
+      if (saveData) {
+        const parsingData = JSON.parse(saveData);
+        console.log(parsingData);
+        setKnockoutScores(
+          parsingData || {
+            "Round Of 16": {},
+            "Quarter-finals": {},
+            "Semi-finals": {},
+            "Final-match": {},
+          },
+        );
+      }
+      setIsLoaded(true);
+      console.log("KnockoutStage Data", saveData);
+    }
+  }, []);
+  // langkah-3-localStorage: Simpan data ke localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && isLoaded) {
+      localStorage.setItem("knockoutData", JSON.stringify(knockoutScores));
+    }
+  }, [knockoutScores, isLoaded]);
+
+  // langkah-4-localStorage: Tulis fungsi untuk update skor
   // langkah-2 FUNGSI UNTUK UPDATE SKOR
   const handleScoreChange = (matchIndex: number, team: "team1" | "team2", value: number) => {
     setKnockoutScores((prevScores) => {
@@ -61,6 +96,7 @@ export default function KnockoutStage() {
     });
   };
 
+  // langkah-5-localStorage
   // [Langkah-3 Fungsi Simulasi Pertandingan
   const handleSimulationMatch = (matchIndex: number) => {
     const currentScores = knockoutScores[activeTab]["match-" + matchIndex] || {
@@ -78,27 +114,32 @@ export default function KnockoutStage() {
 
   // langkah-4 FUNGSI RESET
   const handleReset = (label: string) => {
-    if (activeTab === "Round Of 16") {
-      const grup = label;
-      const newKnockoutScores = { ...knockoutScores };
-      const resetMatches: Record<string, { team1Score: number; team2Score: number }> = {};
-      Object.keys(newKnockoutScores["Round Of 16"]).forEach((matchKey) => {
-        const matchIndex = parseInt(matchKey.split("-")[1]);
-        const match = matches["Round Of 16"][matchIndex];
-        if (match.team1.includes(grup) || match.team2.includes(grup)) {
-          resetMatches[matchKey] = { team1Score: 0, team2Score: 0 };
-        }
-      });
-      console.log({ groupStandings: { [grup]: "removed" }, knockOutScores: { "Round Of 16": resetMatches } });
-    } else {
-      const matchIndex = parseInt(label.split("-")[1]) - 1;
-      let targetStage: Stage;
-      if (activeTab === "Quarter-finals") console.log((targetStage = "Round Of 16"));
-      else if (activeTab === "Semi-finals") console.log((targetStage = "Quarter-finals"));
-      else console.log((targetStage = "Semi-finals"));
-      const resetMatch = { ["match-" + matchIndex]: { team1Score: 0, team2Score: 0 } };
-      console.log(resetMatch);
-    }
+    const matchIndex = parseInt(label.split("-")[1]) - 1;
+    let targetStage: Stage;
+    if (activeTab === "Round Of 16") targetStage = "Round Of 16";
+    else if (activeTab === "Quarter-finals") targetStage = "Quarter-finals";
+    else if (activeTab === "Semi-finals") targetStage = "Semi-finals";
+    else targetStage = "Final-match";
+    const resetMatch = { ["match-" + matchIndex]: { team1Score: 0, team2Score: 0 } };
+
+    const matchKey = "match-" + matchIndex;
+    console.log("🧪 activeTab:", activeTab);
+    console.log("🎯 targetStage:", targetStage);
+    console.log("🔑 matchKey:", matchKey);
+    console.log("🧼 resetMatch:", resetMatch);
+
+    setKnockoutScores((prev) => {
+      console.log("📦 Sebelum update:", JSON.stringify(prev, null, 2));
+      const updated = {
+        ...prev,
+        [targetStage]: {
+          ...prev[targetStage],
+          ["match-" + matchIndex]: { team1Score: 0, team2Score: 0 },
+        },
+      };
+      console.log("✅ Sesudah update:", JSON.stringify(updated, null, 2));
+      return updated;
+    });
   };
 
   return (
@@ -173,23 +214,18 @@ export default function KnockoutStage() {
         {/* TOMBOL RESET GRUP */}
         <div className="flex justify-center md:w-30 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap gap-2 justify-center md:grid md:grid-cols-2 lg:grid lg:grid-cols-1">
-            {activeTab === "Round Of 16"
-              ? groups.map((group) => (
-                  <button onClick={() => handleReset(group)} key={group} className=" px-2 py-1 rounded text-xs text-white bg-red-500 dark:bg-red-700">
-                    Reset {group}
-                  </button>
-                ))
-              : matches[activeTab].map((_, index) => {
-                  let label = "";
-                  if (activeTab === "Quarter-finals") label = `Reset R16-${index + 1}`;
-                  else if (activeTab === "Semi-finals") label = `Reset QF-${index + 1}`;
-                  else if (activeTab === "Final-match") label = `Reset SF-${index + 1}`;
-                  return (
-                    <button onClick={() => handleReset(label)} key={label} className=" px-2 py-1 rounded text-xs text-white bg-red-500 dark:bg-red-700">
-                      {label}
-                    </button>
-                  );
-                })}
+            {matches[activeTab].map((_, index) => {
+              let label = "";
+              if (activeTab === "Round Of 16") label = `Reset R16-${index + 1}`;
+              else if (activeTab === "Quarter-finals") label = `Reset QF-${index + 1}`;
+              else if (activeTab === "Semi-finals") label = `Reset SF-${index + 1}`;
+              else if (activeTab === "Final-match") label = `Reset FM-${index + 1}`;
+              return (
+                <button onClick={() => handleReset(label)} key={label} className=" px-2 py-1 rounded text-xs text-white bg-red-500 dark:bg-red-700">
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
         {/* END */}
