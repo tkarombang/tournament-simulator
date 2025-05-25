@@ -1,36 +1,100 @@
-import { group } from "console";
 import React, { useEffect, useState } from "react";
+import { Tournament } from "@/data";
 
-type MatchScore = {
-  teamScore1: number;
-  teamScore2: number;
-};
-
-export default function KnockoutStage() {
+// [Langkah 1: Inisialisasi state untuk menyimpan skor pertandingan dan groupTeams]
+export default function KnockoutStages() {
   const [activeTab, setActiveTab] = useState<Stage>("Round Of 16");
-  // langkah 1: tulis state untuk menyimpan skor (pertandingan
   const [knockoutScores, setKnockoutScores] = useState<Record<Stage, Record<string, { team1Score: number; team2Score: number }>>>({
     "Round Of 16": {},
     "Quarter-finals": {},
     "Semi-finals": {},
     "Final-match": {},
   });
-  const [resetKey, isResetKey] = useState<number>(0);
+  const [groupTeams, setGroupTeams] = useState<Tournament["groups"] | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const isClient = typeof window !== "undefined";
 
   type Stage = "Round Of 16" | "Quarter-finals" | "Semi-finals" | "Final-match";
 
+  // [Langkah 2: Hitung juara dan runner-up dari groupTeams dengan validasi]
+  const getTopTwoTeams = (teams: Tournament["groups"][string] | undefined): [string, string] => {
+    if (!teams || teams.length < 2 || teams.every((team) => team.PTS === 0)) {
+      return ["TBA", "TBA"]; // Fallback kalau data belum disimulasikan
+    }
+    const sortedTeams = [...teams].sort((a, b) => {
+      if (b.PTS !== a.PTS) return b.PTS - a.PTS; // Urutkan berdasarkan PTS
+      if (b.GD !== a.GD) return b.GD - a.GD; // Goal Difference
+      return b.GF - a.GF; // Goals For
+    });
+    return [sortedTeams[0].team, sortedTeams[1].team]; // Juara, Runner-up
+  };
+
+  const [roundOf16Matches, setRoundOf16Matches] = useState<{ team1: string; team2: string }[]>([
+    { team1: "Juara A", team2: "Runner-up B" },
+    { team1: "Runner-up A", team2: "Juara B" },
+    { team1: "Juara C", team2: "Runner-up D" },
+    { team1: "Runner-up C", team2: "Juara D" },
+    { team1: "Juara E", team2: "Runner-up F" },
+    { team1: "Runner-up E", team2: "Juara F" },
+    { team1: "Juara G", team2: "Runner-up H" },
+    { team1: "Runner-up G", team2: "Juara H" },
+  ]);
+
+  // [Langkah 3: Load groupTeams dari localStorage]
+  useEffect(() => {
+    if (isClient) {
+      const savedData = localStorage.getItem("groupData");
+      const currentData = savedData ? JSON.parse(savedData) : null;
+      if (currentData && currentData.groupTeams && JSON.stringify(currentData.groupTeams) !== JSON.stringify(groupTeams)) {
+        setGroupTeams(currentData.groupTeams);
+      } else if (!savedData) {
+        setGroupTeams({ A: [], B: [], C: [], D: [], E: [], F: [], G: [], H: [] });
+      }
+
+      const savedKnockoutData = localStorage.getItem("knockoutData");
+      if (savedKnockoutData) {
+        const parsedKnockoutData = JSON.parse(savedKnockoutData);
+        setKnockoutScores(
+          parsedKnockoutData || {
+            "Round Of 16": {},
+            "Quarter-finals": {},
+            "Semi-finals": {},
+            "Final-match": {},
+          },
+        );
+      }
+      setIsLoaded(true);
+    }
+  }, [isClient, groupTeams]);
+
+  // [Langkah 4: Update matches berdasarkan groupTeams secara bertahap]
+  useEffect(() => {
+    if (isClient && isLoaded && groupTeams) {
+      const updatedMatches = [
+        { team1: getTopTwoTeams(groupTeams["A"])[0], team2: getTopTwoTeams(groupTeams["B"])[1] },
+        { team1: getTopTwoTeams(groupTeams["A"])[1], team2: getTopTwoTeams(groupTeams["B"])[0] },
+        { team1: getTopTwoTeams(groupTeams["C"])[0], team2: getTopTwoTeams(groupTeams["D"])[1] },
+        { team1: getTopTwoTeams(groupTeams["C"])[1], team2: getTopTwoTeams(groupTeams["D"])[0] },
+        { team1: getTopTwoTeams(groupTeams["E"])[0], team2: getTopTwoTeams(groupTeams["F"])[1] },
+        { team1: getTopTwoTeams(groupTeams["E"])[1], team2: getTopTwoTeams(groupTeams["F"])[0] },
+        { team1: getTopTwoTeams(groupTeams["G"])[0], team2: getTopTwoTeams(groupTeams["H"])[1] },
+        { team1: getTopTwoTeams(groupTeams["G"])[1], team2: getTopTwoTeams(groupTeams["H"])[0] },
+      ].map((match, index) => {
+        const defaultMatch = roundOf16Matches[index];
+        return {
+          team1: match.team1 === "TBA" ? defaultMatch.team1 : match.team1,
+          team2: match.team2 === "TBA" ? defaultMatch.team2 : match.team2,
+        };
+      });
+      // Hanya update kalau ada perubahan
+      if (JSON.stringify(updatedMatches) !== JSON.stringify(roundOf16Matches)) {
+        setRoundOf16Matches(updatedMatches);
+      }
+    }
+  }, [groupTeams, isLoaded, isClient, roundOf16Matches]); // Tambah roundOf16Matches sebagai dependensi
+
   const matches: Record<Stage, { team1: string; team2: string }[]> = {
-    "Round Of 16": [
-      { team1: "Juara A", team2: "Runner-up B" },
-      { team1: "Runner-up A", team2: "Juara B" },
-      { team1: "Juara C", team2: "Runner-up D" },
-      { team1: "Runner-up C", team2: "Juara D" },
-      { team1: "Juara E", team2: "Runner-up F" },
-      { team1: "Runner-up E", team2: "Juara F" },
-      { team1: "Juara G", team2: "Runner-up H" },
-      { team1: "Runner-up G", team2: "Juara H" },
-    ],
+    "Round Of 16": roundOf16Matches,
     "Quarter-finals": [
       { team1: "Pemenang R16-1", team2: "Pemenang R16-2" },
       { team1: "Pemenang R16-3", team2: "Pemenang R16-4" },
@@ -45,37 +109,16 @@ export default function KnockoutStage() {
   };
 
   const tabs: Stage[] = ["Round Of 16", "Quarter-finals", "Semi-finals", "Final-match"];
-  const groups = ["A", "B", "C", "D", "E", "F", "G", "H"];
+  // const groups = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
-  // langkah-2-localStorage: Ambil data dari localStorage di useEffect
+  // [Langkah 5: Simpan data ke localStorage]
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saveData = localStorage.getItem("knockoutData");
-      if (saveData) {
-        const parsingData = JSON.parse(saveData);
-        console.log(parsingData);
-        setKnockoutScores(
-          parsingData || {
-            "Round Of 16": {},
-            "Quarter-finals": {},
-            "Semi-finals": {},
-            "Final-match": {},
-          },
-        );
-      }
-      setIsLoaded(true);
-      console.log("KnockoutStage Data", saveData);
-    }
-  }, []);
-  // langkah-3-localStorage: Simpan data ke localStorage
-  useEffect(() => {
-    if (typeof window !== "undefined" && isLoaded) {
+    if (isClient && isLoaded) {
       localStorage.setItem("knockoutData", JSON.stringify(knockoutScores));
     }
-  }, [knockoutScores, isLoaded]);
+  }, [knockoutScores, isLoaded, isClient]);
 
-  // langkah-4-localStorage: Tulis fungsi untuk update skor
-  // langkah-2 FUNGSI UNTUK UPDATE SKOR
+  // [Langkah 6: Fungsi untuk update skor]
   const handleScoreChange = (matchIndex: number, team: "team1" | "team2", value: number) => {
     setKnockoutScores((prevScores) => {
       const currentScores = prevScores[activeTab]["match-" + matchIndex] || {
@@ -96,8 +139,7 @@ export default function KnockoutStage() {
     });
   };
 
-  // langkah-5-localStorage
-  // [Langkah-3 Fungsi Simulasi Pertandingan
+  // [Langkah 7: Fungsi simulasi pertandingan]
   const handleSimulationMatch = (matchIndex: number) => {
     const currentScores = knockoutScores[activeTab]["match-" + matchIndex] || {
       team1Score: 0,
@@ -112,35 +154,57 @@ export default function KnockoutStage() {
     console.log(`Data yang akan disimpan ke localStorage untuk pertandingan ${matchIndex + 1} di ${activeTab}:`, matchData);
   };
 
-  // langkah-4 FUNGSI RESET
+  // [Langkah 8: Fungsi reset per stage/match]
   const handleReset = (label: string) => {
-    const matchIndex = parseInt(label.split("-")[1]) - 1;
-    let targetStage: Stage;
-    if (activeTab === "Round Of 16") targetStage = "Round Of 16";
-    else if (activeTab === "Quarter-finals") targetStage = "Quarter-finals";
-    else if (activeTab === "Semi-finals") targetStage = "Semi-finals";
-    else targetStage = "Final-match";
-    const resetMatch = { ["match-" + matchIndex]: { team1Score: 0, team2Score: 0 } };
+    if (activeTab === "Round Of 16") {
+      const groupLabel = label;
+      const newKnockoutScores = { ...knockoutScores };
+      const resetMatches: Record<string, { team1Score: number; team2Score: number }> = {};
+      Object.keys(newKnockoutScores["Round Of 16"]).forEach((matchKey) => {
+        const matchIndex = parseInt(matchKey.split("-")[1]);
+        const match = matches["Round Of 16"][matchIndex];
+        if (match.team1.includes(groupLabel) || match.team2.includes(groupLabel)) {
+          resetMatches[matchKey] = { team1Score: 0, team2Score: 0 };
+        }
+      });
+      setKnockoutScores((prev) => ({
+        ...prev,
+        "Round Of 16": { ...prev["Round Of 16"], ...resetMatches },
+      }));
+    } else {
+      const matchIndex = parseInt(label.split("-")[1]) - 1;
+      let targetStage: Stage;
+      if (activeTab === "Quarter-finals") targetStage = "Round Of 16";
+      else if (activeTab === "Semi-finals") targetStage = "Quarter-finals";
+      else targetStage = "Semi-finals";
 
-    const matchKey = "match-" + matchIndex;
-    console.log("🧪 activeTab:", activeTab);
-    console.log("🎯 targetStage:", targetStage);
-    console.log("🔑 matchKey:", matchKey);
-    console.log("🧼 resetMatch:", resetMatch);
-
-    setKnockoutScores((prev) => {
-      console.log("📦 Sebelum update:", JSON.stringify(prev, null, 2));
-      const updated = {
+      setKnockoutScores((prev) => ({
         ...prev,
         [targetStage]: {
           ...prev[targetStage],
           ["match-" + matchIndex]: { team1Score: 0, team2Score: 0 },
         },
-      };
-      console.log("✅ Sesudah update:", JSON.stringify(updated, null, 2));
-      return updated;
-    });
+      }));
+    }
   };
+
+  // [Langkah 9: Fungsi reset semua data]
+  const handleResetAll = () => {
+    setKnockoutScores({
+      "Round Of 16": {},
+      "Quarter-finals": {},
+      "Semi-finals": {},
+      "Final-match": {},
+    });
+    if (isClient) {
+      localStorage.removeItem("knockoutData");
+    }
+  };
+
+  // [Langkah 10: Loading state]
+  if (!isLoaded && isClient) {
+    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
+  }
 
   return (
     <div className="p-2 sm:p-2 md:p-1">
@@ -163,13 +227,19 @@ export default function KnockoutStage() {
       {/* DAFTAR PERTANDINGAN */}
       <div className="flex flex-col md:flex-row gap-4 justify-center">
         <div className={`sm:flex sm:justify-center sm:flex-col gap-4 ${activeTab == "Semi-finals" || activeTab == "Final-match" ? "flex justify-center sm:flex sm:justify-center" : "grid grid-cols-2 sm:grid sm:grid-cols-2"}`}>
-          {/* <div className="flex justify-center items-center flex-col gap-4"> */}
           {matches[activeTab].map((match, index) => {
+            let label = "";
+            if (activeTab === "Round Of 16") label = `R16-${index + 1}`;
+            else if (activeTab === "Quarter-finals") label = `QF-${index + 1}`;
+            else if (activeTab === "Semi-finals") label = `SF-${index + 1}`;
+            else if (activeTab === "Final-match") label = `FM-${index + 1}`;
+
             const currentScores = knockoutScores[activeTab]["match-" + index] || { team1Score: 0, team2Score: 0 };
             return (
               <div key={index} className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md border-gray-200 dark:border-gray-700">
                 {/* PERTANDINGAN */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-gray-800 dark:text-gray-200">
+                  <p className="text-xs">{label}</p>
                   {/* JUARA GRUP */}
                   <div className="flex flex-col items-center gap-1 w-full sm:w-40">
                     <span className="text-xs font-medium text-left">{match.team1}</span>
@@ -211,24 +281,28 @@ export default function KnockoutStage() {
             );
           })}
         </div>
-        {/* TOMBOL RESET GRUP */}
+        {/* TOMBOL RESET */}
         <div className="flex justify-center md:w-30 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-wrap gap-2 justify-center md:grid md:grid-cols-2 lg:grid lg:grid-cols-1">
+            {/* Reset per match */}
             {matches[activeTab].map((_, index) => {
               let label = "";
-              if (activeTab === "Round Of 16") label = `Reset R16-${index + 1}`;
-              else if (activeTab === "Quarter-finals") label = `Reset QF-${index + 1}`;
-              else if (activeTab === "Semi-finals") label = `Reset SF-${index + 1}`;
-              else if (activeTab === "Final-match") label = `Reset FM-${index + 1}`;
+              if (activeTab === "Round Of 16") label = `R16-${index + 1}`;
+              else if (activeTab === "Quarter-finals") label = `QF-${index + 1}`;
+              else if (activeTab === "Semi-finals") label = `SF-${index + 1}`;
+              else if (activeTab === "Final-match") label = `FM-${index + 1}`;
               return (
-                <button onClick={() => handleReset(label)} key={label} className=" px-2 py-1 rounded text-xs text-white bg-red-500 dark:bg-red-700">
-                  {label}
+                <button onClick={() => handleReset(label)} key={label} className="px-2 py-1 rounded text-xs text-white bg-red-500 dark:bg-red-700">
+                  Reset {label}
                 </button>
               );
             })}
+            {/* Tombol Reset All */}
+            <button onClick={handleResetAll} className="px-2 py-1 rounded text-xs text-white bg-red-600 dark:bg-red-800">
+              Reset All
+            </button>
           </div>
         </div>
-        {/* END */}
       </div>
     </div>
   );

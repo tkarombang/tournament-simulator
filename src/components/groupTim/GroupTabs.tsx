@@ -5,6 +5,7 @@ import SimulationForm from "./SimulationForm";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotate } from "@fortawesome/free-solid-svg-icons";
+import KnockoutStage from "../knockoutTim/KnockoutStages";
 
 export default function GroupTabs() {
   const [activeGroup, setActiveGroup] = useState<string>("A");
@@ -19,14 +20,19 @@ export default function GroupTabs() {
   useEffect(() => {
     if (isClient) {
       const saveData = localStorage.getItem("groupData");
-      console.log(saveData);
       if (saveData) {
         const parsingData = JSON.parse(saveData);
-        console.log(parsingData);
-        setGroupTeams(parsingData.groupTeams);
+        if (parsingData.groupTeams) {
+          setGroupTeams(parsingData.groupTeams);
+        } else {
+          setGroupTeams(initialData.groups);
+        }
+
         if (parsingData.simulatedMatches) {
           setSimulatedMatches(Object.fromEntries(Object.entries(parsingData.simulatedMatches).map(([group, matchSet]) => [group, new Set(matchSet as string[])])));
         }
+      } else {
+        setGroupTeams(initialData.groups);
       }
       setIsLoaded(true);
     }
@@ -41,7 +47,7 @@ export default function GroupTabs() {
       };
       localStorage.setItem("groupData", JSON.stringify(dataToSave));
     }
-  });
+  }, [groupTeams, simulatedMatches, isLoaded, isClient]);
 
   //  RESET SCORES PAS GANTI GROUP
   useEffect(() => {
@@ -52,7 +58,7 @@ export default function GroupTabs() {
         }
       });
     }
-  });
+  }, [activeGroup, isClient, isLoaded]);
 
   const handleSimulate = (stageMatches: Array<{ team1: string; score1: number; team2: string; score2: number; matchId: string }>) => {
     setGroupTeams((prevTeams) => {
@@ -153,12 +159,18 @@ export default function GroupTabs() {
         newTeams[activeGroup] = currentGroupTeams;
 
         // SIMPAN SKOR DI LOCALSTORAGE
-        localStorage.setItem(`match-${matchId}`, JSON.stringify({ score1, score2 }));
+        if (isClient) {
+          localStorage.setItem(`match-${matchId}`, JSON.stringify({ score1, score2 }));
+        }
       });
 
       newTeams[activeGroup] = currentGroupTeams;
       return newTeams;
     });
+    //   setSimulatedMatches((prev) => ({
+    //   ...prev,
+    //   [activeGroup]: new Set([...(prev[activeGroup] || []), ...stageMatches.map((m) => m.matchId)]),
+    // }));
   };
 
   const handleReset = () => {
@@ -175,9 +187,15 @@ export default function GroupTabs() {
         localStorage.removeItem(key);
       }
     });
+    localStorage.removeItem("groupData");
   };
 
   const isResetDisabled = !simulatedMatches[activeGroup] || simulatedMatches[activeGroup].size == 0;
+
+  // [Langkah 4: Render KnockoutStage hanya jika data siap dan valid]
+  if (!isLoaded || !groupTeams || Object.keys(groupTeams).length === 0) {
+    return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
+  }
   return (
     <div className="p-4">
       <ul className="flex flex-wrap justify-center text-sm font-medium text-center text-slate-600 border-b border-sky-500 dark:border-teal-dark dark:text-slate-500 mb-3">
