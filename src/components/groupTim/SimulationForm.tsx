@@ -1,4 +1,4 @@
-import { Team } from "@/data";
+import initialData, { Team } from "@/data";
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -25,18 +25,24 @@ interface MatchScore {
   score2: number;
 }
 
-export default function SimulationForm({ teams, activeGroup, simulatedMatches, setSimulatedMatches, onSimulateStage }: SimulationFormProps) {
-  function generateMatches(teams: Team[], group: string) {
-    if (teams.length < 4) return [];
-    return [
-      { stage: 1, team1: teams[0], team2: teams[1], matchId: `${group}-1-0-1` },
-      { stage: 1, team1: teams[2], team2: teams[3], matchId: `${group}-1-2-3` },
-      { stage: 2, team1: teams[3], team2: teams[0], matchId: `${group}-2-3-0` },
-      { stage: 2, team1: teams[2], team2: teams[1], matchId: `${group}-2-2-1` },
-      { stage: 3, team1: teams[2], team2: teams[0], matchId: `${group}-3-2-0` },
-      { stage: 3, team1: teams[3], team2: teams[1], matchId: `${group}-3-3-1` },
-    ];
+function generateMatches(teams: Team[], group: string) {
+  if (teams.length < 4) {
+    console.log("Not enough teams, using initialData as fallback");
+    return generateMatches(initialData.groups[group], group); // Fallback ke initialData
   }
+  // if (teams.length < 4) return [];
+  return [
+    { stage: 1, team1: teams[0], team2: teams[1], matchId: `${group}-1-0-1` },
+    { stage: 1, team1: teams[2], team2: teams[3], matchId: `${group}-1-2-3` },
+    { stage: 2, team1: teams[3], team2: teams[0], matchId: `${group}-2-3-0` },
+    { stage: 2, team1: teams[2], team2: teams[1], matchId: `${group}-2-2-1` },
+    { stage: 3, team1: teams[2], team2: teams[0], matchId: `${group}-3-2-0` },
+    { stage: 3, team1: teams[3], team2: teams[1], matchId: `${group}-3-3-1` },
+  ];
+}
+
+export default function SimulationForm({ teams: propTeams, activeGroup, simulatedMatches, setSimulatedMatches, onSimulateStage }: SimulationFormProps) {
+  const teams = propTeams.length > 0 ? propTeams : initialData.groups[activeGroup];
 
   const matches = useMemo(() => generateMatches(teams, activeGroup), [teams, activeGroup]);
 
@@ -58,24 +64,9 @@ export default function SimulationForm({ teams, activeGroup, simulatedMatches, s
   const [visibleStages, setVisibleStages] = useState<{ [group: string]: number[] }>({});
 
   useEffect(() => {
-    // INI YANG MEMBUAT SCORE GF GA GD tetap 0 (HAPUS NANTI)
-    // setSimulatedMatches((prev) => {
-    //   if (!prev[activeGroup]) {
-    //     return { ...prev, [activeGroup]: new Set<string>() };
-    //   }
-    //   return prev;
-    // });
-    // INI YANG MEMBUAT SKOR AKAN DI RESET KE 0 (HAPUS NANTI)
-    // const newScores = matches.reduce((acc, match) => {
-    //   acc[match.matchId] = { score1: 0, score2: 0 };
-    //   return acc;
-    // }, {} as { [matchId: string]: MatchScore });
-    // setScores(newScores);
-
     setVisibleStages((prev) => ({
       ...prev,
       [activeGroup]: prev[activeGroup] ?? [1],
-      // [activeGroup]: [1],
     }));
   }, [activeGroup, matches, setSimulatedMatches]);
 

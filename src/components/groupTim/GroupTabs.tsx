@@ -5,18 +5,17 @@ import SimulationForm from "./SimulationForm";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotate } from "@fortawesome/free-solid-svg-icons";
-import KnockoutStage from "../knockoutTim/KnockoutStages";
 
 export default function GroupTabs() {
   const [activeGroup, setActiveGroup] = useState<string>("A");
   const [groupTeams, setGroupTeams] = useState<Tournament["groups"]>(initialData.groups);
   const [simulatedMatches, setSimulatedMatches] = useState<{ [group: string]: Set<string> }>({});
   const [resetKey, setResetKey] = useState<number>(0);
-  const [isLoaded, setIsLoaded] = useState(false); // tambah loading state (apakah data dari localStorage sudah dimuat)
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const isClient = typeof window !== "undefined";
 
-  // langkah-2: Ambil data dari localStorage di useEffect setelah hidrasi
+  // Langkah-2: Ambil data dari localStorage di useEffect setelah hidrasi
   useEffect(() => {
     if (isClient) {
       const saveData = localStorage.getItem("groupData");
@@ -27,7 +26,6 @@ export default function GroupTabs() {
         } else {
           setGroupTeams(initialData.groups);
         }
-
         if (parsingData.simulatedMatches) {
           setSimulatedMatches(Object.fromEntries(Object.entries(parsingData.simulatedMatches).map(([group, matchSet]) => [group, new Set(matchSet as string[])])));
         }
@@ -38,7 +36,7 @@ export default function GroupTabs() {
     }
   }, [isClient]);
 
-  // langkah-3 simpan data ke localStorage
+  // Langkah-3: Simpan data ke localStorage
   useEffect(() => {
     if (isClient && isLoaded) {
       const dataToSave = {
@@ -49,7 +47,7 @@ export default function GroupTabs() {
     }
   }, [groupTeams, simulatedMatches, isLoaded, isClient]);
 
-  //  RESET SCORES PAS GANTI GROUP
+  // RESET SCORES PAS GANTI GROUP
   useEffect(() => {
     if (isClient && isLoaded) {
       Object.keys(localStorage).forEach((key) => {
@@ -61,38 +59,70 @@ export default function GroupTabs() {
   }, [activeGroup, isClient, isLoaded]);
 
   const handleSimulate = (stageMatches: Array<{ team1: string; score1: number; team2: string; score2: number; matchId: string }>) => {
+    console.log("Received stageMatches:", stageMatches); // Debug: Cek data dari SimulationForm
+    if (!stageMatches || stageMatches.length === 0) {
+      console.log("No valid stageMatches provided, skipping update");
+      return;
+    }
+
     setGroupTeams((prevTeams) => {
       const newTeams = { ...prevTeams };
-      const currentGroupTeams = [...newTeams[activeGroup]];
+      let currentGroupTeams = [...(newTeams[activeGroup] || initialData.groups[activeGroup])]; // Selalu pakai initialData sebagai fallback
+
+      if (currentGroupTeams.length === 0) {
+        console.log("currentGroupTeams is empty, populating from initialData");
+        currentGroupTeams = [...initialData.groups[activeGroup]]; // Pastikan tim awal ada
+      }
 
       stageMatches.forEach(({ matchId, team1, score1, team2, score2 }) => {
+        console.log(`Processing match ${matchId}: ${team1} vs ${team2}`); // Debug
         const isAlreadySimulated = simulatedMatches[activeGroup]?.has(matchId) ?? false;
-        const team1Index = currentGroupTeams.findIndex((team) => team.team === team1);
-        const team2Index = currentGroupTeams.findIndex((team) => team.team === team2);
+        let team1Index = currentGroupTeams.findIndex((team) => team.team === team1);
+        let team2Index = currentGroupTeams.findIndex((team) => team.team === team2);
 
-        if (team1Index === -1 || team2Index === -1) return prevTeams;
+        console.log(`team1Index: ${team1Index}, team2Index: ${team2Index}`); // Debug indeks tim
+
+        // Tambah tim dari initialData kalau nggak ada
+        if (team1Index === -1) {
+          const initialTeam = initialData.groups[activeGroup].find((t) => t.team === team1);
+          if (initialTeam) {
+            console.log(`Adding ${team1} from initialData`);
+            currentGroupTeams.push({ ...initialTeam, MP: 0, GF: 0, GA: 0, GD: 0, W: 0, D: 0, L: 0, PTS: 0, last5: [] });
+            team1Index = currentGroupTeams.length - 1;
+          } else {
+            console.log(`Initial team ${team1} not found in initialData`);
+          }
+        }
+        if (team2Index === -1) {
+          const initialTeam = initialData.groups[activeGroup].find((t) => t.team === team2);
+          if (initialTeam) {
+            console.log(`Adding ${team2} from initialData`);
+            currentGroupTeams.push({ ...initialTeam, MP: 0, GF: 0, GA: 0, GD: 0, W: 0, D: 0, L: 0, PTS: 0, last5: [] });
+            team2Index = currentGroupTeams.length - 1;
+          } else {
+            console.log(`Initial team ${team2} not found in initialData`);
+          }
+        }
+
+        if (team1Index === -1 || team2Index === -1) {
+          console.log(`Team not found: ${team1} or ${team2}, skipping match ${matchId}`);
+          return;
+        }
 
         const team1Data = { ...currentGroupTeams[team1Index] };
         const team2Data = { ...currentGroupTeams[team2Index] };
 
         // JIKA PERTANDINGAN SUDAH DISIMULASIKAN SEBELUMNYA, KURANGI STATS SEBELUMNYA
         if (isAlreadySimulated) {
-          // KURANGI MP
           team1Data.MP -= 1;
           team2Data.MP -= 1;
-
-          // KURANGI GF DAN GA BERDASARKAN SKOR SEBELUMNYA
           const prevScore = JSON.parse(localStorage.getItem(`match-${matchId}`) || "{}");
           team1Data.GF -= prevScore.score1 || 0;
           team1Data.GA -= prevScore.score2 || 0;
           team2Data.GF -= prevScore.score2 || 0;
           team2Data.GA -= prevScore.score1 || 0;
-
-          // UPDATE GD
           team1Data.GD = team1Data.GF - team1Data.GA;
           team2Data.GD = team2Data.GF - team2Data.GA;
-
-          // KURANGI W, D, L, PTS berdasarkan hasil sebelumnya
           const prevResult1 = team1Data.last5[team1Data.last5.length - 1];
           const prevResult2 = team2Data.last5[team2Data.last5.length - 1];
           if (prevResult1 === "W") {
@@ -113,27 +143,19 @@ export default function GroupTabs() {
           } else if (prevResult2 === "L") {
             team2Data.L -= 1;
           }
-
-          // HAPUS HASIL TERAKHIR LAST5
           team1Data.last5 = team1Data.last5.slice(0, -1);
           team2Data.last5 = team2Data.last5.slice(0, -1);
         }
 
-        // UPDATE MP (MATCH PLAYED)
+        // UPDATE STATS BARU
         team1Data.MP += 1;
         team2Data.MP += 1;
-
-        // UPDATE GF (Goals Gor) dan GA (Goals Against)
         team1Data.GF += score1;
         team1Data.GA += score2;
         team2Data.GF += score2;
         team2Data.GA += score1;
-
-        // UPDATE GD (GOAL DIFFERENCE)
         team1Data.GD = team1Data.GF - team1Data.GA;
         team2Data.GD = team2Data.GF - team2Data.GA;
-
-        // TENTUKAN PEMENANG DAN UPDATE W, D, L, PTS
         if (score1 > score2) {
           team1Data.W += 1;
           team1Data.PTS += 3;
@@ -148,54 +170,56 @@ export default function GroupTabs() {
           team1Data.PTS += 1;
           team2Data.PTS += 1;
         }
-
-        // UPDATE LAST5
         team1Data.last5 = [...team1Data.last5, score1 > score2 ? "W" : score1 < score2 ? "L" : "D"].slice(-5);
         team2Data.last5 = [...team2Data.last5, score2 > score1 ? "W" : score2 < score1 ? "L" : "D"].slice(-5);
 
-        // UPDATE ARRAY TIM DI GROUP AKTIF
         currentGroupTeams[team1Index] = team1Data;
         currentGroupTeams[team2Index] = team2Data;
-        newTeams[activeGroup] = currentGroupTeams;
-
-        // SIMPAN SKOR DI LOCALSTORAGE
-        if (isClient) {
-          localStorage.setItem(`match-${matchId}`, JSON.stringify({ score1, score2 }));
-        }
+        newTeams[activeGroup] = [...currentGroupTeams]; // Pastikan array di-copy ulang
       });
 
-      newTeams[activeGroup] = currentGroupTeams;
+      console.log("Updated groupTeams[activeGroup]:", newTeams[activeGroup]); // Debug
       return newTeams;
     });
-    //   setSimulatedMatches((prev) => ({
-    //   ...prev,
-    //   [activeGroup]: new Set([...(prev[activeGroup] || []), ...stageMatches.map((m) => m.matchId)]),
-    // }));
+    setSimulatedMatches((prev) => {
+      const currentSet = prev[activeGroup] || new Set<string>();
+      const newMatchIds = new Set([...Array.from(currentSet), ...stageMatches.map((m) => m.matchId)]);
+      return {
+        ...prev,
+        [activeGroup]: newMatchIds,
+      };
+    });
   };
 
   const handleReset = () => {
-    setGroupTeams(initialData.groups);
+    setGroupTeams((prev) => {
+      if (prev) {
+        const newGroupTeams = { ...prev, [activeGroup]: initialData.groups[activeGroup] };
+        localStorage.setItem("groupData", JSON.stringify({ groupTeams: newGroupTeams }));
+        return newGroupTeams;
+      }
+      return prev || initialData.groups;
+    });
     setSimulatedMatches((prev) => ({
       ...prev,
       [activeGroup]: new Set<string>(),
     }));
-    // Force remount SimulationForm to reset internal state
     setResetKey((prev) => prev + 1);
-    // BERSIHKAN LOCAL STORAGE
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("match-")) {
+      if (key.startsWith("match-") && key.includes(activeGroup)) {
         localStorage.removeItem(key);
       }
     });
-    localStorage.removeItem("groupData");
+    // localStorage.removeItem("groupData");
   };
 
-  const isResetDisabled = !simulatedMatches[activeGroup] || simulatedMatches[activeGroup].size == 0;
+  const isResetDisabled = !simulatedMatches[activeGroup] || simulatedMatches[activeGroup].size === 0;
 
-  // [Langkah 4: Render KnockoutStage hanya jika data siap dan valid]
+  // Langkah 4: Render hanya jika data siap
   if (!isLoaded || !groupTeams || Object.keys(groupTeams).length === 0) {
     return <div className="p-4 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
   }
+
   return (
     <div className="p-4">
       <ul className="flex flex-wrap justify-center text-sm font-medium text-center text-slate-600 border-b border-sky-500 dark:border-teal-dark dark:text-slate-500 mb-3">
@@ -213,8 +237,15 @@ export default function GroupTabs() {
         ))}
       </ul>
       <div>
-        <StandingsTable teams={groupTeams[activeGroup]} />
-        <SimulationForm key={resetKey} teams={groupTeams[activeGroup]} activeGroup={activeGroup} simulatedMatches={simulatedMatches} setSimulatedMatches={setSimulatedMatches} onSimulateStage={handleSimulate} />
+        <StandingsTable key={`${activeGroup}-${resetKey}`} teams={groupTeams[activeGroup] || initialData.groups[activeGroup]} />
+        <SimulationForm
+          key={resetKey}
+          teams={groupTeams[activeGroup] || initialData.groups[activeGroup]}
+          activeGroup={activeGroup}
+          simulatedMatches={simulatedMatches}
+          setSimulatedMatches={setSimulatedMatches}
+          onSimulateStage={handleSimulate}
+        />
         <div className="mt-7 flex justify-center relative">
           <motion.button
             layout
@@ -222,8 +253,9 @@ export default function GroupTabs() {
             onClick={handleReset}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className={`absolute z-50 bottom-1 right-1 w-12 h-12 text-2xl text-white rounded-full
-           ${isResetDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "transition-colors bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"} `}
+            className={`absolute z-50 bottom-1 right-1 w-12 h-12 text-2xl text-white rounded-full ${
+              isResetDisabled ? "bg-gray-400 dark:bg-gray-600 cursor-not-allowed" : "transition-colors bg-red-500 hover:bg-red-600 dark:bg-red-700 dark:hover:bg-red-800"
+            }`}
           >
             <FontAwesomeIcon icon={faRotate} />
           </motion.button>
